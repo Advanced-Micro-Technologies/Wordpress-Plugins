@@ -2,7 +2,7 @@
 
 Silences the routine "update succeeded" emails WordPress sends after automatic updates, keeps the failure alerts, and logs every core, plugin and theme update.
 
-Version 3.0.0. Successor to [Disable Auto-Update Success Emails](../disable_update_emails) 2.1.
+Version 3.0.0. Successor to [Disable Auto-Update Success Emails](https://github.com/Advanced-Micro-Technologies/Wordpress-Plugins/tree/eda95e306c6c733d480010a2ba6df418b8911fd8/disable_update_emails) 2.1, which is no longer kept in this repository.
 
 WordPress emails the site administrator each time an automatic update finishes. Across a portfolio of managed sites that becomes a stream of messages with nothing to act on, which trains you to ignore the folder where the important update emails also land. This plugin removes the routine confirmations and leaves the alarms alone. It needs no configuration: a fresh install behaves like version 2.1 of the old plugin, with one deliberate change (see the [changelog](#changelog)).
 

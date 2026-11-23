@@ -4,6 +4,5 @@ Custom WordPress plugins, packaged for direct upload through the WordPress admin
 | Plugin | Version | What it does |
 |---|---|---|
 | [Quiet Update Emails](quiet-update-emails) | 3.0.0 | Silences routine automatic update emails, keeps the failure alerts, and logs every core, plugin and theme update. Has a settings screen, recipient override, subject tags, Site Health entry and multisite support. |
-| [Disable Auto-Update Success Emails](disable_update_emails) | 2.1 | Suppresses "update succeeded" emails for core, plugins and themes. Single file, no settings. |
 
-**Quiet Update Emails is the successor to Disable Auto-Update Success Emails.** New installs should use Quiet Update Emails. The older plugin stays here unchanged for sites that still run it; see [moving a site from the old plugin](quiet-update-emails/README.md#moving-a-site-from-disable-auto-update-success-emails).
+**Quiet Update Emails is the successor to Disable Auto-Update Success Emails**, which has been removed from this repository. Its last version, 2.1, is still available [in the repository history](https://github.com/Advanced-Micro-Technologies/Wordpress-Plugins/tree/eda95e306c6c733d480010a2ba6df418b8911fd8/disable_update_emails). Sites that still run it should [move to Quiet Update Emails](quiet-update-emails/README.md#moving-a-site-from-disable-auto-update-success-emails).

@@ -1,0 +1,41 @@
+/* Quiet Update Emails: settings and update log screen. */
+
+.proadvanced-update-emails .nav-tab-wrapper {
+	margin-bottom: 16px;
+}
+
+.proadvanced-update-emails .proadvanced-update-emails-locked {
+	font-style: normal;
+	color: #996800;
+}
+
+.proadvanced-update-emails .proadvanced-update-emails-clear-log {
+	display: inline;
+}
+
+.proadvanced-update-emails-log td {
+	vertical-align: top;
+}
+
+.proadvanced-update-emails-result {
+	display: inline-block;
+	padding: 1px 8px;
+	border-radius: 3px;
+	font-weight: 600;
+	white-space: nowrap;
+}
+
+.proadvanced-update-emails-result-success {
+	background: #edfaef;
+	color: #005c12;
+}
+
+.proadvanced-update-emails-result-failed {
+	background: #fcf0f1;
+	color: #8a2424;
+}
+
+.proadvanced-update-emails-result-rolled-back {
+	background: #fcf9e8;
+	color: #6e4c00;
+}

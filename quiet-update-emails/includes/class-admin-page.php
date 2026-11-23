@@ -252,43 +252,71 @@ class Admin_Page {
 	}
 
 	/**
-	 * Registers the settings sections and fields.
+	 * Registers the settings fields.
+	 *
+	 * Each section is drawn as a card by render_settings_tab(), so related
+	 * settings are grouped into one field per row.
 	 *
 	 * @return void
 	 */
 	public function register_fields() {
-		$labels = Settings::email_labels();
+		foreach ( $this->sections() as $section_id => $section_title ) {
+			add_settings_section( $section_id, $section_title, '__return_null', self::SLUG );
+		}
 
-		add_settings_section(
+		$batch_note = __( 'The email contains the full report for the batch, including the updates that succeeded.', 'quiet-update-emails' );
+
+		$this->add_field(
+			'group_core',
+			__( 'WordPress core', 'quiet-update-emails' ),
+			'group',
 			'proadvanced_update_emails_emails',
-			__( 'Emails', 'quiet-update-emails' ),
-			array( $this, 'render_emails_intro' ),
-			self::SLUG
+			array(
+				'items' => array(
+					'core_success'   => array(
+						'label' => __( 'Update succeeded', 'quiet-update-emails' ),
+					),
+					'core_fail'      => array(
+						'label' => __( 'Update failed', 'quiet-update-emails' ),
+					),
+					'core_critical'  => array(
+						'label'       => __( 'Critical failure', 'quiet-update-emails' ),
+						'description' => __( 'Sent when a core update fails part-way and the site may need attention.', 'quiet-update-emails' ),
+					),
+					'core_available' => array(
+						'label'       => __( 'New version available, not installed automatically', 'quiet-update-emails' ),
+						'description' => __( 'WordPress only sends it when WordPress.org flags the release for notification.', 'quiet-update-emails' ),
+					),
+				),
+			)
 		);
 
-		$descriptions = array(
-			'core_critical'  => __( 'Sent when a core update fails part-way and the site may need attention.', 'quiet-update-emails' ),
-			'core_available' => __( 'Tells you a new WordPress version exists that was not installed automatically. WordPress only sends it when WordPress.org flags the release for notification.', 'quiet-update-emails' ),
-			'plugin_fail'    => __( 'The email contains the full report for the batch, including the updates that succeeded.', 'quiet-update-emails' ),
-			'theme_fail'     => __( 'The email contains the full report for the batch, including the updates that succeeded.', 'quiet-update-emails' ),
-		);
-
-		foreach ( Settings::email_toggle_keys() as $key ) {
+		foreach ( array(
+			'plugin' => __( 'Plugins', 'quiet-update-emails' ),
+			'theme'  => __( 'Themes', 'quiet-update-emails' ),
+		) as $type => $label ) {
 			$this->add_field(
-				$key,
-				$labels[ $key ],
-				'checkbox',
+				'group_' . $type,
+				$label,
+				'group',
 				'proadvanced_update_emails_emails',
 				array(
-					'checkbox_label' => __( 'Send this email', 'quiet-update-emails' ),
-					'description'    => isset( $descriptions[ $key ] ) ? $descriptions[ $key ] : '',
+					'items' => array(
+						$type . '_success' => array(
+							'label' => __( 'All automatic updates in a batch succeeded', 'quiet-update-emails' ),
+						),
+						$type . '_fail'    => array(
+							'label'       => __( 'One or more automatic updates in a batch failed', 'quiet-update-emails' ),
+							'description' => $batch_note,
+						),
+					),
 				)
 			);
 		}
 
 		$this->add_field(
 			'debug_email',
-			$labels['debug_email'],
+			__( 'Debug email', 'quiet-update-emails' ),
 			'select',
 			'proadvanced_update_emails_emails',
 			array(
@@ -300,20 +328,13 @@ class Admin_Page {
 			)
 		);
 
-		add_settings_section(
-			'proadvanced_update_emails_delivery',
-			__( 'Delivery', 'quiet-update-emails' ),
-			'__return_null',
-			self::SLUG
-		);
-
 		$this->add_field(
 			'recipients',
-			__( 'Send update emails to', 'quiet-update-emails' ),
+			__( 'Send to', 'quiet-update-emails' ),
 			'text',
 			'proadvanced_update_emails_delivery',
 			array(
-				'class'       => 'regular-text',
+				'class'       => 'large-text',
 				'placeholder' => Settings::default_recipient(),
 				'description' => __( 'One or more email addresses, separated by commas. Every update email that is sent goes here instead of the site admin address. Leave empty to use the WordPress default.', 'quiet-update-emails' ),
 			)
@@ -322,29 +343,17 @@ class Admin_Page {
 		$this->add_field(
 			'subject_tags',
 			__( 'Subject tags', 'quiet-update-emails' ),
-			'checkbox',
+			'tags',
 			'proadvanced_update_emails_delivery',
 			array(
 				'checkbox_label' => __( 'Add a tag to the start of the subject line', 'quiet-update-emails' ),
 				'description'    => __( 'Makes inbox rules easy to write. Leave a tag empty to add nothing for that kind of email.', 'quiet-update-emails' ),
+				'tags'           => array(
+					'tag_failed'    => __( 'Failures', 'quiet-update-emails' ),
+					'tag_available' => __( 'Update available', 'quiet-update-emails' ),
+					'tag_ok'        => __( 'Successes', 'quiet-update-emails' ),
+				),
 			)
-		);
-
-		$tags = array(
-			'tag_failed'    => __( 'Tag for failures', 'quiet-update-emails' ),
-			'tag_available' => __( 'Tag for "update available"', 'quiet-update-emails' ),
-			'tag_ok'        => __( 'Tag for successes', 'quiet-update-emails' ),
-		);
-
-		foreach ( $tags as $key => $label ) {
-			$this->add_field( $key, $label, 'text', 'proadvanced_update_emails_delivery', array( 'maxlength' => Settings::TAG_MAX_LENGTH ) );
-		}
-
-		add_settings_section(
-			'proadvanced_update_emails_log',
-			__( 'Update log', 'quiet-update-emails' ),
-			'__return_null',
-			self::SLUG
 		);
 
 		$this->add_field(
@@ -364,93 +373,60 @@ class Admin_Page {
 	}
 
 	/**
-	 * Intro text of the Emails section.
-	 *
-	 * @return void
-	 */
-	public function render_emails_intro() {
-		echo '<p>' . esc_html__( 'Ticked: WordPress sends the email as it normally would. Unticked: this plugin suppresses it. The plugin never forces an email on, so an email that WordPress or another plugin has already turned off stays off.', 'quiet-update-emails' ) . '</p>';
-	}
-
-	/**
-	 * Renders one settings field.
+	 * Renders one settings field (one row of a card).
 	 *
 	 * @param array $args Field arguments.
 	 * @return void
 	 */
 	public function render_field( $args ) {
-		$key    = $args['key'];
-		$locked = Settings::is_locked( $key );
-		$all    = Settings::get_all();
-		$stored = Settings::get_stored();
-		$value  = $locked ? $all[ $key ] : $stored[ $key ];
-		$name   = Settings::OPTION . '[' . $key . ']';
-		$id     = 'proadvanced-update-emails-' . str_replace( '_', '-', $key );
+		$key = $args['key'];
+
+		if ( 'group' === $args['type'] ) {
+			echo '<fieldset><legend class="screen-reader-text"><span>' . esc_html( $args['legend'] ) . '</span></legend>';
+			foreach ( $args['items'] as $item_key => $item ) {
+				echo '<div class="proadvanced-update-emails-option">';
+				$this->render_checkbox( $item_key, $item['label'] );
+				$this->render_description( isset( $item['description'] ) ? $item['description'] : '' );
+				$this->render_notes( $item_key );
+				echo '</div>';
+			}
+			echo '</fieldset>';
+			return;
+		}
+
+		if ( 'tags' === $args['type'] ) {
+			echo '<fieldset><legend class="screen-reader-text"><span>' . esc_html( $args['legend'] ) . '</span></legend>';
+			echo '<div class="proadvanced-update-emails-option">';
+			$this->render_checkbox( $key, $args['checkbox_label'] );
+			$this->render_notes( $key );
+			echo '</div>';
+			foreach ( $args['tags'] as $tag_key => $tag_label ) {
+				echo '<div class="proadvanced-update-emails-tag">';
+				printf(
+					'<label for="%1$s">%2$s</label>',
+					esc_attr( $this->field_id( $tag_key ) ),
+					esc_html( $tag_label )
+				);
+				echo '<div>';
+				$this->render_text( $tag_key, array( 'maxlength' => Settings::TAG_MAX_LENGTH ) );
+				$this->render_notes( $tag_key );
+				echo '</div></div>';
+			}
+			$this->render_description( $args['description'] );
+			echo '</fieldset>';
+			return;
+		}
 
 		if ( 'checkbox' === $args['type'] ) {
-			// The hidden field makes an unticked box arrive as "0" rather than not at all.
-			if ( ! $locked ) {
-				printf( '<input type="hidden" name="%s" value="0" />', esc_attr( $name ) );
-			}
-			printf(
-				'<label for="%1$s"><input type="checkbox" id="%1$s" name="%2$s" value="1" %3$s %4$s /> %5$s</label>',
-				esc_attr( $id ),
-				esc_attr( $name ),
-				checked( (bool) $value, true, false ),
-				disabled( $locked, true, false ),
-				esc_html( $args['checkbox_label'] )
-			);
+			$this->render_checkbox( $key, $args['checkbox_label'] );
 		} elseif ( 'select' === $args['type'] ) {
-			printf(
-				'<select id="%1$s" name="%2$s" %3$s>',
-				esc_attr( $id ),
-				esc_attr( $name ),
-				disabled( $locked, true, false )
-			);
-			foreach ( $args['choices'] as $choice => $choice_label ) {
-				printf(
-					'<option value="%1$s" %2$s>%3$s</option>',
-					esc_attr( $choice ),
-					selected( $value, $choice, false ),
-					esc_html( $choice_label )
-				);
-			}
-			echo '</select>';
+			$this->render_select( $key, $args['choices'] );
 		} else {
-			printf(
-				'<input type="text" id="%1$s" name="%2$s" value="%3$s" class="%4$s" placeholder="%5$s" %6$s %7$s />',
-				esc_attr( $id ),
-				esc_attr( $name ),
-				esc_attr( $value ),
-				esc_attr( isset( $args['class'] ) ? $args['class'] : '' ),
-				esc_attr( isset( $args['placeholder'] ) ? $args['placeholder'] : '' ),
-				isset( $args['maxlength'] ) ? 'maxlength="' . esc_attr( (string) $args['maxlength'] ) . '"' : '',
-				disabled( $locked, true, false )
-			);
+			$this->render_text( $key, $args );
 		}
 
-		if ( ! empty( $args['description'] ) ) {
-			echo '<p class="description">' . esc_html( $args['description'] ) . '</p>';
-		}
-
-		if ( $locked ) {
-			echo '<p class="description proadvanced-update-emails-locked">';
-			printf(
-				/* translators: %s: name of a PHP constant. */
-				esc_html__( 'Read-only: this value is set by the %s constant in wp-config.php or a must-use plugin.', 'quiet-update-emails' ),
-				'<code>PROADVANCED_UPDATE_EMAILS</code>'
-			);
-			echo '</p>';
-		} elseif ( $all[ $key ] !== $stored[ $key ] ) {
-			echo '<p class="description proadvanced-update-emails-locked">';
-			printf(
-				/* translators: 1: name of a filter hook, 2: the value in effect. */
-				esc_html__( 'A %1$s filter currently changes this to: %2$s', 'quiet-update-emails' ),
-				'<code>proadvanced_update_emails_settings</code>',
-				'<strong>' . esc_html( $this->describe_value( $key, $all[ $key ] ) ) . '</strong>'
-			);
-			echo '</p>';
-		}
+		$this->render_description( isset( $args['description'] ) ? $args['description'] : '' );
+		$this->render_notes( $key );
 	}
 
 	/**
@@ -505,21 +481,35 @@ class Admin_Page {
 	}
 
 	/**
+	 * The settings sections, drawn as cards.
+	 *
+	 * @return array Section ID => title.
+	 */
+	private function sections() {
+		return array(
+			'proadvanced_update_emails_emails'   => __( 'Emails', 'quiet-update-emails' ),
+			'proadvanced_update_emails_delivery' => __( 'Delivery', 'quiet-update-emails' ),
+			'proadvanced_update_emails_log'      => __( 'Update log', 'quiet-update-emails' ),
+		);
+	}
+
+	/**
 	 * Registers one field with the Settings API.
 	 *
-	 * @param string $key     Setting key.
-	 * @param string $label   Field label.
-	 * @param string $type    'checkbox', 'select' or 'text'.
+	 * @param string $key     Setting key, or a name for a row that holds several settings.
+	 * @param string $label   Row label.
+	 * @param string $type    'checkbox', 'select', 'text', 'group' or 'tags'.
 	 * @param string $section Section ID.
 	 * @param array  $args    Optional. Extra arguments for render_field().
 	 * @return void
 	 */
 	private function add_field( $key, $label, $type, $section, array $args = array() ) {
-		$args['key']  = $key;
-		$args['type'] = $type;
+		$args['key']    = $key;
+		$args['type']   = $type;
+		$args['legend'] = $label;
 
-		if ( 'checkbox' !== $type ) {
-			$args['label_for'] = 'proadvanced-update-emails-' . str_replace( '_', '-', $key );
+		if ( 'select' === $type || 'text' === $type ) {
+			$args['label_for'] = $this->field_id( $key );
 		}
 
 		add_settings_field(
@@ -530,6 +520,177 @@ class Admin_Page {
 			$section,
 			$args
 		);
+	}
+
+	/**
+	 * Returns the HTML ID of a setting's control.
+	 *
+	 * @param string $key Setting key.
+	 * @return string
+	 */
+	private function field_id( $key ) {
+		return 'proadvanced-update-emails-' . str_replace( '_', '-', $key );
+	}
+
+	/**
+	 * Returns the form field name of a setting.
+	 *
+	 * @param string $key Setting key.
+	 * @return string
+	 */
+	private function field_name( $key ) {
+		return Settings::OPTION . '[' . $key . ']';
+	}
+
+	/**
+	 * Returns the value a control should show: the saved one, or the value
+	 * fixed by the constant when the setting is locked.
+	 *
+	 * @param string $key Setting key.
+	 * @return mixed
+	 */
+	private function field_value( $key ) {
+		$settings = Settings::is_locked( $key ) ? Settings::get_all() : Settings::get_stored();
+
+		return $settings[ $key ];
+	}
+
+	/**
+	 * Prints a checkbox with its label.
+	 *
+	 * @param string $key   Setting key.
+	 * @param string $label Label text.
+	 * @return void
+	 */
+	private function render_checkbox( $key, $label ) {
+		$locked = Settings::is_locked( $key );
+
+		// The hidden field makes an unticked box arrive as "0" rather than not at all.
+		if ( ! $locked ) {
+			printf( '<input type="hidden" name="%s" value="0" />', esc_attr( $this->field_name( $key ) ) );
+		}
+
+		printf(
+			'<label for="%1$s"><input type="checkbox" id="%1$s" name="%2$s" value="1" %3$s %4$s /> %5$s</label>',
+			esc_attr( $this->field_id( $key ) ),
+			esc_attr( $this->field_name( $key ) ),
+			checked( (bool) $this->field_value( $key ), true, false ),
+			disabled( $locked, true, false ),
+			esc_html( $label )
+		);
+	}
+
+	/**
+	 * Prints a select box.
+	 *
+	 * @param string $key     Setting key.
+	 * @param array  $choices Value => label.
+	 * @return void
+	 */
+	private function render_select( $key, array $choices ) {
+		$value = $this->field_value( $key );
+
+		printf(
+			'<select id="%1$s" name="%2$s" %3$s>',
+			esc_attr( $this->field_id( $key ) ),
+			esc_attr( $this->field_name( $key ) ),
+			disabled( Settings::is_locked( $key ), true, false )
+		);
+
+		foreach ( $choices as $choice => $choice_label ) {
+			printf(
+				'<option value="%1$s" %2$s>%3$s</option>',
+				esc_attr( $choice ),
+				selected( $value, $choice, false ),
+				esc_html( $choice_label )
+			);
+		}
+
+		echo '</select>';
+	}
+
+	/**
+	 * Prints a text input.
+	 *
+	 * @param string $key  Setting key.
+	 * @param array  $args Optional. 'class', 'placeholder' and 'maxlength'.
+	 * @return void
+	 */
+	private function render_text( $key, array $args = array() ) {
+		printf(
+			'<input type="text" id="%1$s" name="%2$s" value="%3$s" class="%4$s" placeholder="%5$s" %6$s %7$s />',
+			esc_attr( $this->field_id( $key ) ),
+			esc_attr( $this->field_name( $key ) ),
+			esc_attr( $this->field_value( $key ) ),
+			esc_attr( isset( $args['class'] ) ? $args['class'] : '' ),
+			esc_attr( isset( $args['placeholder'] ) ? $args['placeholder'] : '' ),
+			isset( $args['maxlength'] ) ? 'maxlength="' . esc_attr( (string) $args['maxlength'] ) . '"' : '',
+			disabled( Settings::is_locked( $key ), true, false )
+		);
+	}
+
+	/**
+	 * Prints a field description.
+	 *
+	 * @param string $description Description text, or '' for none.
+	 * @return void
+	 */
+	private function render_description( $description ) {
+		if ( '' !== $description ) {
+			echo '<p class="description">' . esc_html( $description ) . '</p>';
+		}
+	}
+
+	/**
+	 * Prints the note that a setting is fixed by the constant or changed by a filter.
+	 *
+	 * @param string $key Setting key.
+	 * @return void
+	 */
+	private function render_notes( $key ) {
+		$all    = Settings::get_all();
+		$stored = Settings::get_stored();
+
+		if ( Settings::is_locked( $key ) ) {
+			echo '<p class="description proadvanced-update-emails-locked">';
+			printf(
+				/* translators: %s: name of a PHP constant. */
+				esc_html__( 'Read-only: this value is set by the %s constant in wp-config.php or a must-use plugin.', 'quiet-update-emails' ),
+				'<code>PROADVANCED_UPDATE_EMAILS</code>'
+			);
+			echo '</p>';
+		} elseif ( $all[ $key ] !== $stored[ $key ] ) {
+			echo '<p class="description proadvanced-update-emails-locked">';
+			printf(
+				/* translators: 1: name of a filter hook, 2: the value in effect. */
+				esc_html__( 'A %1$s filter currently changes this to: %2$s', 'quiet-update-emails' ),
+				'<code>proadvanced_update_emails_settings</code>',
+				'<strong>' . esc_html( $this->describe_value( $key, $all[ $key ] ) ) . '</strong>'
+			);
+			echo '</p>';
+		}
+	}
+
+	/**
+	 * Prints one section as a card.
+	 *
+	 * @param string $section_id Section ID.
+	 * @param string $intro      Optional. Text shown under the card title.
+	 * @return void
+	 */
+	private function render_card( $section_id, $intro = '' ) {
+		$sections = $this->sections();
+
+		echo '<div class="proadvanced-update-emails-card">';
+		echo '<h2>' . esc_html( $sections[ $section_id ] ) . '</h2>';
+
+		if ( '' !== $intro ) {
+			echo '<p>' . esc_html( $intro ) . '</p>';
+		}
+
+		echo '<table class="form-table" role="presentation">';
+		do_settings_fields( self::SLUG, $section_id );
+		echo '</table></div>';
 	}
 
 	/**
@@ -552,7 +713,7 @@ class Admin_Page {
 	}
 
 	/**
-	 * Renders the Settings tab.
+	 * Renders the Settings tab: two columns of cards.
 	 *
 	 * @return void
 	 */
@@ -565,30 +726,58 @@ class Admin_Page {
 
 		?>
 		<form method="post" action="<?php echo esc_url( $form_action ); ?>">
-			<?php
-			settings_fields( Settings::GROUP );
-			do_settings_sections( self::SLUG );
-			submit_button();
-			?>
+			<?php settings_fields( Settings::GROUP ); ?>
+
+			<div class="proadvanced-update-emails-columns">
+				<div class="proadvanced-update-emails-column">
+					<?php
+					$this->render_card(
+						'proadvanced_update_emails_emails',
+						__( 'Ticked emails are left to WordPress, which sends them as it normally would. Unticked emails are suppressed. The plugin never forces an email on, so one that WordPress or another plugin has already turned off stays off.', 'quiet-update-emails' )
+					);
+					?>
+				</div>
+
+				<div class="proadvanced-update-emails-column">
+					<?php
+					$this->render_card( 'proadvanced_update_emails_delivery' );
+					$this->render_card( 'proadvanced_update_emails_log' );
+					?>
+
+					<div class="proadvanced-update-emails-card">
+						<h2><?php esc_html_e( 'Test email', 'quiet-update-emails' ); ?></h2>
+						<p>
+							<?php
+							printf(
+								/* translators: %s: comma-separated list of email addresses. */
+								esc_html__( 'Sends a short test message through WordPress to the address update emails currently go to: %s', 'quiet-update-emails' ),
+								'<strong>' . esc_html( implode( ', ', Settings::effective_recipients() ) ) . '</strong>'
+							);
+							?>
+						</p>
+						<p class="description"><?php esc_html_e( 'Save your settings first if you have just changed the recipient.', 'quiet-update-emails' ); ?></p>
+						<p>
+							<?php
+							// Belongs to the separate form below, so it does not submit the settings.
+							submit_button(
+								__( 'Send test email', 'quiet-update-emails' ),
+								'secondary',
+								'proadvanced_update_emails_send_test',
+								false,
+								array( 'form' => 'proadvanced-update-emails-test-form' )
+							);
+							?>
+						</p>
+					</div>
+				</div>
+			</div>
+
+			<?php submit_button(); ?>
 		</form>
 
-		<hr />
-
-		<h2><?php esc_html_e( 'Test email', 'quiet-update-emails' ); ?></h2>
-		<p>
-			<?php
-			printf(
-				/* translators: %s: comma-separated list of email addresses. */
-				esc_html__( 'Sends a short test message through WordPress to the address update emails currently go to: %s', 'quiet-update-emails' ),
-				'<strong>' . esc_html( implode( ', ', Settings::effective_recipients() ) ) . '</strong>'
-			);
-			?>
-		</p>
-		<p class="description"><?php esc_html_e( 'Save your settings first if you have just changed the recipient.', 'quiet-update-emails' ); ?></p>
-		<form method="post" action="<?php echo esc_url( self::url() ); ?>">
-			<?php wp_nonce_field( 'proadvanced_update_emails_test_email' ); ?>
+		<form method="post" action="<?php echo esc_url( self::url() ); ?>" id="proadvanced-update-emails-test-form">
+			<?php wp_nonce_field( 'proadvanced_update_emails_test_email', '_wpnonce', true, true ); ?>
 			<input type="hidden" name="proadvanced_update_emails_action" value="test_email" />
-			<?php submit_button( __( 'Send test email', 'quiet-update-emails' ), 'secondary', 'proadvanced_update_emails_send_test', true ); ?>
 		</form>
 		<?php
 	}

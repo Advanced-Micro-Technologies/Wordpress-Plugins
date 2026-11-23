@@ -105,27 +105,29 @@ wp cron event delete proadvanced_update_emails_prune_log
 
 **Settings → Update Emails** on a single site (requires `manage_options`). On multisite the screen is under **Network Admin → Settings → Update Emails** (requires `manage_network_options`), and both the settings and the log are network-wide.
 
+The Settings tab is laid out as cards in two columns: Emails on the left; Delivery, Update log and Test email on the right. On narrower screens the cards stack in one column.
+
 Nothing is stored in the database until you save the screen. Until then the defaults in code apply.
 
-| Setting | Key | Default | What it does |
-|---|---|---|---|
-| Core auto-update succeeded | `core_success` | off | On: leave the email to WordPress. Off: suppress it. |
-| Core auto-update failed | `core_fail` | on | Same. |
-| Core auto-update critical failure | `core_critical` | on | Same. |
-| Core update available | `core_available` | on | Same. |
-| Plugin auto-updates, all succeeded | `plugin_success` | off | Same. |
-| Plugin auto-updates, one or more failed | `plugin_fail` | on | Same. |
-| Theme auto-updates, all succeeded | `theme_success` | off | Same. |
-| Theme auto-updates, one or more failed | `theme_fail` | on | Same. |
-| Automatic update debug email | `debug_email` | `suppress` | `suppress`, or `follow` to leave WordPress's decision alone. There is deliberately no value that forces it on. |
-| Send update emails to | `recipients` | empty | One or more addresses, comma-separated. When set, every update email the plugin lets through (core, plugin, theme and debug) goes there instead of the site admin address. Invalid addresses are rejected. Empty means WordPress's default recipient. |
-| Subject tags | `subject_tags` | off | Prepends a tag to the subject line so inbox rules are easy. |
-| Tag for failures | `tag_failed` | `[UPDATE FAILED]` | Used for core "failed" and "critical" emails, plugin/theme emails with a failure, and a debug email that reports failures. |
-| Tag for "update available" | `tag_available` | `[UPDATE AVAILABLE]` | Used for the core "available" email. |
-| Tag for successes | `tag_ok` | `[UPDATE OK]` | Used for success emails, if you have switched any on. |
-| Record updates | `log_enabled` | on | Switches the update log on or off. |
+| Card | Setting on screen | Key | Default | What it does |
+|---|---|---|---|---|
+| Emails | WordPress core: Update succeeded | `core_success` | off | Ticked: leave the email to WordPress. Unticked: suppress it. |
+| Emails | WordPress core: Update failed | `core_fail` | on | Same. |
+| Emails | WordPress core: Critical failure | `core_critical` | on | Same. |
+| Emails | WordPress core: New version available, not installed automatically | `core_available` | on | Same. |
+| Emails | Plugins: All automatic updates in a batch succeeded | `plugin_success` | off | Same. |
+| Emails | Plugins: One or more automatic updates in a batch failed | `plugin_fail` | on | Same. |
+| Emails | Themes: All automatic updates in a batch succeeded | `theme_success` | off | Same. |
+| Emails | Themes: One or more automatic updates in a batch failed | `theme_fail` | on | Same. |
+| Emails | Debug email | `debug_email` | `suppress` | `suppress`, or `follow` to leave WordPress's decision alone. There is deliberately no value that forces it on. |
+| Delivery | Send to | `recipients` | empty | One or more addresses, comma-separated. When set, every update email the plugin lets through (core, plugin, theme and debug) goes there instead of the site admin address. Invalid addresses are rejected. Empty means WordPress's default recipient. |
+| Delivery | Subject tags: Add a tag to the start of the subject line | `subject_tags` | off | Prepends a tag to the subject line so inbox rules are easy. |
+| Delivery | Subject tags: Failures | `tag_failed` | `[UPDATE FAILED]` | Used for core "failed" and "critical" emails, plugin/theme emails with a failure, and a debug email that reports failures. |
+| Delivery | Subject tags: Update available | `tag_available` | `[UPDATE AVAILABLE]` | Used for the core "available" email. |
+| Delivery | Subject tags: Successes | `tag_ok` | `[UPDATE OK]` | Used for success emails, if you have switched any on. |
+| Update log | Record updates | `log_enabled` | on | Switches the update log on or off. |
 
-**Test email.** The button at the bottom of the screen sends a short message through `wp_mail()` to the address update emails currently go to, and shows either a confirmation or the actual mail error. A confirmation means WordPress handed the message to the mail system, not that it was delivered, so check the inbox.
+**Test email.** The button in the Test email card sends a short message through `wp_mail()` to the address update emails currently go to, and shows either a confirmation or the actual mail error. A confirmation means WordPress handed the message to the mail system, not that it was delivered, so check the inbox.
 
 **Site Health.** *Tools → Site Health* gets an entry listing which update emails are suppressed and who receives the rest. The same facts appear under *Site Health → Info → Quiet Update Emails*.
 
@@ -225,7 +227,7 @@ The log records what WordPress tells plugins. Where WordPress does not say, the 
 
 While the old plugin is still loaded it keeps suppressing the "available" and debug emails regardless of your settings here, because it turns them off unconditionally. Quiet Update Emails shows a reminder on the Plugins screen and on its own settings screen (to users who can manage plugins) until the old plugin is gone. It never deactivates or changes the old plugin itself.
 
-The one behaviour change to be aware of: the old plugin suppressed the "a new version of WordPress is available" email; this plugin sends it by default. To keep the old behaviour, switch **Core update available** off, or set `'core_available' => false` in the constant.
+The one behaviour change to be aware of: the old plugin suppressed the "a new version of WordPress is available" email; this plugin sends it by default. To keep the old behaviour, untick **New version available, not installed automatically** under WordPress core, or set `'core_available' => false` in the constant.
 
 ---
 

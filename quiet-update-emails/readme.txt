@@ -12,11 +12,30 @@ Silences routine automatic update emails, keeps the failure alerts, and logs eve
 
 == Description ==
 
-WordPress emails the site administrator every time an automatic update finishes. On one site that is mild noise. Across many sites it is a stream of messages that say nothing you need to act on, and it buries the ones that matter.
+**Stop reading "your site has updated" emails. Keep the ones that say something broke.**
 
-Quiet Update Emails turns off the routine "everything worked" emails and leaves the alarms alone. It works as soon as it is activated; you do not have to configure anything.
+WordPress emails the site administrator every time an automatic update finishes. On one site that is mild noise. Across a portfolio of client sites it is a daily stream of messages with nothing to act on, and it buries the few that matter.
 
-**What happens by default**
+Quiet Update Emails switches off the routine "everything worked" emails and leaves the alarms alone. It works the moment you activate it. There is nothing to configure unless you want to.
+
+= What you get =
+
+* **A quieter inbox.** Success emails for core, plugin and theme auto-updates are suppressed. Failure emails still arrive.
+* **Failure reports in full.** When one plugin or theme in a batch fails, the email is sent and lists the whole batch.
+* **A switch for every update email.** Turn each one on or off from one screen.
+* **Alerts sent where you want them.** Send update emails to one or more addresses instead of the site admin address.
+* **Subject tags for inbox rules.** Optionally start subjects with `[UPDATE FAILED]`, `[UPDATE AVAILABLE]` or `[UPDATE OK]`. The tags can be edited.
+* **An update log.** Every core, plugin and theme update, automatic or manual, with old and new version and the result. Entries are kept for 90 days.
+* **A test email button** that shows the real mail error if sending fails.
+* **A Site Health entry** showing which emails are suppressed and who receives the rest.
+
+= Built for people who manage many sites =
+
+* Configure it without opening the settings screen: a `wp-config.php` constant, a filter, or one WP-CLI command.
+* Settings fixed in `wp-config.php` are shown read-only, so they cannot be changed from the dashboard.
+* Multisite: settings and the log are network-wide, under Network Admin > Settings.
+
+= What happens by default =
 
 * Core auto-update succeeded: suppressed
 * Core auto-update failed: sent
@@ -30,22 +49,11 @@ Quiet Update Emails turns off the routine "everything worked" emails and leaves 
 
 "Sent" means the plugin leaves WordPress's own decision alone. The plugin only ever turns an email off. If WordPress or another plugin has already decided not to send an email, it stays off.
 
-**Features**
-
-* A switch for each of the emails above.
-* Recipient override: send update emails to one or more addresses of your choice instead of the site admin address.
-* Optional subject tags such as `[UPDATE FAILED]`, `[UPDATE AVAILABLE]` and `[UPDATE OK]`, so inbox rules are easy to write. The tags can be edited.
-* A test email button that reports the real mail error if sending fails.
-* An update log of every core, plugin and theme update, automatic or manual, with old and new version and the result. Entries are deleted after 90 days.
-* A Site Health entry, and a section in Site Health Info, showing which emails are suppressed and who receives the rest.
-* Multisite support: settings and the log are network-wide, under Network Admin > Settings.
-* Configuration without the admin screen, through a `wp-config.php` constant, a filter, or WP-CLI.
-
-**Privacy**
+= Privacy =
 
 The plugin makes no external requests, loads nothing from other servers and does not track anything. Its settings and the update log are stored in two options in your own database.
 
-**Development**
+= Development =
 
 Source code, issues and full documentation: [github.com/Advanced-Micro-Technologies/Wordpress-Plugins](https://github.com/Advanced-Micro-Technologies/Wordpress-Plugins/tree/main/quiet-update-emails)
 
@@ -106,6 +114,13 @@ Activate Quiet Update Emails, then deactivate and delete the old plugin. While b
 = What is removed when I delete the plugin? =
 
 Both options (settings and log) and the daily clean-up event.
+
+== Screenshots ==
+
+1. The Settings tab: a switch for every update email, the recipient override, subject tags and the test email button.
+2. The update log: every core, plugin and theme update with old and new version, the result, and whether it was automatic or manual.
+3. The Site Health entry lists which update emails are suppressed and who receives the rest.
+4. Settings fixed with the `PROADVANCED_UPDATE_EMAILS` constant are shown read-only.
 
 == Changelog ==
 

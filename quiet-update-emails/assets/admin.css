@@ -102,6 +102,27 @@
 	vertical-align: top;
 }
 
+.proadvanced-update-emails-log th,
+.proadvanced-update-emails-log td:first-child {
+	white-space: nowrap;
+}
+
+.proadvanced-update-emails-log td:nth-child(3) {
+	min-width: 220px;
+}
+
+@media screen and (max-width: 782px) {
+
+	.proadvanced-update-emails-log th,
+	.proadvanced-update-emails-log td:first-child {
+		white-space: normal;
+	}
+
+	.proadvanced-update-emails-log td:nth-child(3) {
+		min-width: 0;
+	}
+}
+
 .proadvanced-update-emails-result {
 	display: inline-block;
 	padding: 1px 8px;

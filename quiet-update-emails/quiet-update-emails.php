@@ -3,7 +3,7 @@
  * Plugin Name:       Quiet Update Emails
  * Plugin URI:        https://github.com/Advanced-Micro-Technologies/Wordpress-Plugins/tree/main/quiet-update-emails
  * Description:       Silences routine automatic update emails, keeps the failure alerts, and logs every core, plugin and theme update.
- * Version:           3.0.0
+ * Version:           3.0.1
  * Requires at least: 5.5.1
  * Requires PHP:      7.0
  * Author:            Advanced Micro Technologies, LLC
@@ -42,7 +42,7 @@ if ( defined( 'PROADVANCED_UPDATE_EMAILS_VERSION' ) ) {
 	return;
 }
 
-define( 'PROADVANCED_UPDATE_EMAILS_VERSION', '3.0.0' );
+define( 'PROADVANCED_UPDATE_EMAILS_VERSION', '3.0.1' );
 define( 'PROADVANCED_UPDATE_EMAILS_FILE', __FILE__ );
 
 require_once __DIR__ . '/includes/class-settings.php';

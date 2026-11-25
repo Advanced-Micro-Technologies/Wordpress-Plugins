@@ -2,7 +2,7 @@
 
 Silences the routine "update succeeded" emails WordPress sends after automatic updates, keeps the failure alerts, and logs every core, plugin and theme update.
 
-Version 3.0.0. Successor to [Disable Auto-Update Success Emails](https://github.com/Advanced-Micro-Technologies/Wordpress-Plugins/tree/eda95e306c6c733d480010a2ba6df418b8911fd8/disable_update_emails) 2.1, which is no longer kept in this repository.
+Version 3.0.1. Successor to [Disable Auto-Update Success Emails](https://github.com/Advanced-Micro-Technologies/Wordpress-Plugins/tree/eda95e306c6c733d480010a2ba6df418b8911fd8/disable_update_emails) 2.1, which is no longer kept in this repository.
 
 WordPress emails the site administrator each time an automatic update finishes. Across a portfolio of managed sites that becomes a stream of messages with nothing to act on, which trains you to ignore the folder where the important update emails also land. This plugin removes the routine confirmations and leaves the alarms alone. It needs no configuration: a fresh install behaves like version 2.1 of the old plugin, with one deliberate change (see the [changelog](#changelog)).
 
@@ -206,6 +206,8 @@ The filter receives the saved settings merged over the defaults. Unknown keys an
 - The log is stored in one option, `proadvanced_update_emails_log`, which is not autoloaded. There are no custom database tables. As a safety net the log never holds more than 500 entries; the oldest are dropped first.
 - One update produces one entry. Automatic updates also fire WordPress's general upgrader hooks; the plugin takes the result from the automatic updater and discards what it saw on the general hooks.
 
+- **Simultaneous updates are safe.** Adding an entry means reading the log, appending and writing it back, so each write takes a short lock (WordPress's own upgrader lock) and re-reads the log from the database first. Two updates that finish at the same moment, including on different sites of a multisite network, both get logged. If the lock cannot be had within 3 seconds the entry is written anyway, and a lock left by a request that died is ignored after 30 seconds.
+
 ### Limits
 
 The log records what WordPress tells plugins. Where WordPress does not say, the entry says so instead of guessing.
@@ -265,6 +267,12 @@ Everything global is prefixed `proadvanced_update_emails_` / `PROADVANCED_UPDATE
 ---
 
 ## Changelog
+
+### 3.0.1
+
+- Fixed: when two updates were logged at the same moment, one of the two log entries could be lost. Log writes now take a short lock and re-read the log from the database first. Tested with twelve processes writing at once, on a single site and across three sites of a multisite network, with no entries lost. Emails were never affected.
+- The update log's 500-entry limit is now stated on the WordPress.org page as well as here.
+- Uninstalling also removes a leftover lock, if there is one.
 
 ### 3.0.0
 

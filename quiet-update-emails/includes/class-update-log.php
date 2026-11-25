@@ -14,6 +14,11 @@ if ( ! defined( 'ABSPATH' ) ) {
 /**
  * Stores the update log in a single, non-autoloaded option.
  *
+ * Adding an entry means reading the whole log, appending and writing it back.
+ * Two requests doing that at the same moment would each start from the same
+ * copy and the second write would drop the first one's entry, so every write
+ * happens under a short lock and re-reads the log from the database first.
+ *
  * Entries are kept oldest first. Each entry is an array:
  *
  *   t      int    Unix timestamp (UTC) of when the entry was recorded.
@@ -55,6 +60,21 @@ class Update_Log {
 	const NOTE_MAX_LENGTH = 300;
 
 	/**
+	 * Name of the write lock. WordPress stores it as the option "<name>.lock".
+	 */
+	const LOCK_NAME = 'proadvanced_update_emails_log';
+
+	/**
+	 * Seconds after which a lock left behind by a request that died is ignored.
+	 */
+	const LOCK_TIMEOUT = 30;
+
+	/**
+	 * Longest time, in seconds, to wait for another request to finish writing.
+	 */
+	const LOCK_WAIT = 3;
+
+	/**
 	 * Whether logging is switched on.
 	 *
 	 * @return bool
@@ -89,15 +109,21 @@ class Update_Log {
 			return;
 		}
 
-		$entries = self::get_entries();
+		$locked = self::lock();
 
-		foreach ( $new_entries as $entry ) {
-			if ( is_array( $entry ) ) {
-				$entries[] = self::sanitize_entry( $entry );
+		try {
+			$entries = self::get_fresh_entries();
+
+			foreach ( $new_entries as $entry ) {
+				if ( is_array( $entry ) ) {
+					$entries[] = self::sanitize_entry( $entry );
+				}
 			}
-		}
 
-		self::save( self::prune_entries( $entries ) );
+			self::save( self::prune_entries( $entries ) );
+		} finally {
+			self::unlock( $locked );
+		}
 	}
 
 	/**
@@ -106,11 +132,24 @@ class Update_Log {
 	 * @return void
 	 */
 	public static function prune() {
+		// Cheap look first, so viewing the log does not take the lock when nothing has expired.
 		$entries = self::get_entries();
-		$pruned  = self::prune_entries( $entries );
 
-		if ( count( $pruned ) !== count( $entries ) ) {
-			self::save( $pruned );
+		if ( count( self::prune_entries( $entries ) ) === count( $entries ) ) {
+			return;
+		}
+
+		$locked = self::lock();
+
+		try {
+			$entries = self::get_fresh_entries();
+			$pruned  = self::prune_entries( $entries );
+
+			if ( count( $pruned ) !== count( $entries ) ) {
+				self::save( $pruned );
+			}
+		} finally {
+			self::unlock( $locked );
 		}
 	}
 
@@ -120,10 +159,16 @@ class Update_Log {
 	 * @return void
 	 */
 	public static function clear() {
-		if ( Settings::is_network() ) {
-			delete_site_option( self::OPTION );
-		} else {
-			delete_option( self::OPTION );
+		$locked = self::lock();
+
+		try {
+			if ( Settings::is_network() ) {
+				delete_site_option( self::OPTION );
+			} else {
+				delete_option( self::OPTION );
+			}
+		} finally {
+			self::unlock( $locked );
 		}
 	}
 
@@ -158,6 +203,119 @@ class Update_Log {
 	 */
 	public static function unschedule() {
 		wp_clear_scheduled_hook( self::CRON_HOOK );
+	}
+
+	/**
+	 * Takes the write lock, waiting briefly if another request holds it.
+	 *
+	 * Uses WordPress's own upgrader lock, which is an atomic database insert and
+	 * so works across processes and servers. On multisite the lock always lives
+	 * on the main site, because the log is network-wide.
+	 *
+	 * @return bool True if the lock was taken. False if it could not be taken in
+	 *              time; the caller then writes anyway, which is no worse than
+	 *              having no lock, rather than dropping the entry.
+	 */
+	private static function lock() {
+		require_once ABSPATH . 'wp-admin/includes/class-wp-upgrader.php';
+
+		$switched = self::switch_to_main_site();
+		$deadline = microtime( true ) + self::LOCK_WAIT;
+		$locked   = false;
+
+		do {
+			// WordPress checks an existing lock's age through the option cache, which may be out of date.
+			self::forget_cached( self::LOCK_NAME . '.lock', false );
+
+			$locked = \WP_Upgrader::create_lock( self::LOCK_NAME, self::LOCK_TIMEOUT );
+			if ( $locked ) {
+				break;
+			}
+
+			usleep( 50000 );
+		} while ( microtime( true ) < $deadline );
+
+		if ( $switched ) {
+			restore_current_blog();
+		}
+
+		return (bool) $locked;
+	}
+
+	/**
+	 * Releases the write lock.
+	 *
+	 * @param bool $locked Whether lock() took the lock.
+	 * @return void
+	 */
+	private static function unlock( $locked ) {
+		if ( ! $locked ) {
+			return;
+		}
+
+		$switched = self::switch_to_main_site();
+
+		\WP_Upgrader::release_lock( self::LOCK_NAME );
+
+		if ( $switched ) {
+			restore_current_blog();
+		}
+	}
+
+	/**
+	 * On multisite, switches to the main site unless already there.
+	 *
+	 * @return bool Whether a switch happened and must be undone.
+	 */
+	private static function switch_to_main_site() {
+		if ( ! is_multisite() || is_main_site() ) {
+			return false;
+		}
+
+		switch_to_blog( get_main_site_id() );
+
+		return true;
+	}
+
+	/**
+	 * Reads the log straight from the database, ignoring any copy this request
+	 * loaded earlier. Call only while holding the lock.
+	 *
+	 * @return array[]
+	 */
+	private static function get_fresh_entries() {
+		self::forget_cached( self::OPTION, Settings::is_network() );
+
+		return self::get_entries();
+	}
+
+	/**
+	 * Drops an option from WordPress's in-memory cache so the next read hits the database.
+	 *
+	 * @param string $option  Option name.
+	 * @param bool   $network Whether it is a network option.
+	 * @return void
+	 */
+	private static function forget_cached( $option, $network ) {
+		if ( $network ) {
+			$network_id     = get_current_network_id();
+			$group          = 'site-options';
+			$cache_key      = "$network_id:$option";
+			$notoptions_key = "$network_id:notoptions";
+		} else {
+			$group          = 'options';
+			$cache_key      = $option;
+			$notoptions_key = 'notoptions';
+		}
+
+		wp_cache_delete( $cache_key, $group );
+
+		// WordPress also remembers options it found missing.
+		$notoptions = wp_cache_get( $notoptions_key, $group );
+		if ( is_array( $notoptions ) && isset( $notoptions[ $option ] ) ) {
+			unset( $notoptions[ $option ] );
+			wp_cache_set( $notoptions_key, $notoptions, $group );
+		}
 	}
 
 	/**

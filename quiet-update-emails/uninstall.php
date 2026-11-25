@@ -21,5 +21,8 @@ delete_option( 'proadvanced_update_emails_log' );
 delete_site_option( 'proadvanced_update_emails_settings' );
 delete_site_option( 'proadvanced_update_emails_log' );
 
+// A write lock left behind by a request that died, if any.
+delete_option( 'proadvanced_update_emails_log.lock' );
+
 // The daily log pruning event.
 wp_clear_scheduled_hook( 'proadvanced_update_emails_prune_log' );

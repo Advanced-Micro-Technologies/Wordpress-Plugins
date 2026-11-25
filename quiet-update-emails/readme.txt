@@ -3,7 +3,7 @@ Contributors: webshaun
 Tags: auto-update, email, notifications, updates, update log
 Requires at least: 5.5.1
 Tested up to: 7.1
-Stable tag: 3.0.0
+Stable tag: 3.0.1
 Requires PHP: 7.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
@@ -25,7 +25,7 @@ Quiet Update Emails switches off the routine "everything worked" emails and leav
 * **A switch for every update email.** Turn each one on or off from one screen.
 * **Alerts sent where you want them.** Send update emails to one or more addresses instead of the site admin address.
 * **Subject tags for inbox rules.** Optionally start subjects with `[UPDATE FAILED]`, `[UPDATE AVAILABLE]` or `[UPDATE OK]`. The tags can be edited.
-* **An update log.** Every core, plugin and theme update, automatic or manual, with old and new version and the result. Entries are kept for 90 days.
+* **An update log.** Every core, plugin and theme update, automatic or manual, with old and new version and the result. Entries are kept for 90 days, and the log never holds more than 500 entries.
 * **A test email button** that shows the real mail error if sending fails.
 * **A Site Health entry** showing which emails are suppressed and who receives the rest.
 
@@ -99,6 +99,10 @@ WordPress sends it only on development builds, where it is useful. The two choic
 
 No. It only changes where update emails go. Other WordPress emails are not affected.
 
+= How big can the update log get? =
+
+Entries are deleted after 90 days, and the log never holds more than 500 entries; the oldest are dropped first. It is stored in one option that WordPress does not load on every page view. When several updates finish at the same moment, including on different sites of a multisite network, each write takes a short lock so no entry is lost.
+
 = What does the update log not catch? =
 
 It records what WordPress tells plugins. A manual core update that fails is logged without a reason, because WordPress shows the reason on screen only. A manual update that stops during download is logged as "did not finish". Whether WordPress restored the old version after a failed manual plugin or theme update is not detected; rollbacks are recorded for automatic updates.
@@ -124,6 +128,10 @@ Both options (settings and log) and the daily clean-up event.
 
 == Changelog ==
 
+= 3.0.1 =
+* Fixed: when two updates were logged at the same moment, one of the two log entries could be lost. Log writes now take a short lock and re-read the log first. Emails were never affected.
+* Documentation: the update log's limit of 500 entries is now stated on this page.
+
 = 3.0.0 =
 * New name. Successor to "Disable Auto-Update Success Emails" 2.1.
 * Changed: the "a new WordPress version is available" email is now sent by default. Version 2.1 suppressed it.
@@ -135,6 +143,9 @@ Both options (settings and log) and the daily clean-up event.
 * New: configuration by constant, filter or WP-CLI.
 
 == Upgrade Notice ==
+
+= 3.0.1 =
+Fixes a rare case where an update log entry could be lost when two updates finished at the same moment. No settings change.
 
 = 3.0.0 =
 First release under this name. If you used Disable Auto-Update Success Emails, note that the "update available" email is now sent by default.

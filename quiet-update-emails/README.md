@@ -4,6 +4,8 @@ Silences the routine "update succeeded" emails WordPress sends after automatic u
 
 Version 3.0.1. Successor to [Disable Auto-Update Success Emails](https://github.com/Advanced-Micro-Technologies/Wordpress-Plugins/tree/eda95e306c6c733d480010a2ba6df418b8911fd8/disable_update_emails) 2.1, which is no longer kept in this repository.
 
+**Available in the WordPress.org plugin directory: [wordpress.org/plugins/quiet-update-emails](https://wordpress.org/plugins/quiet-update-emails/).** See [Installation](#installation).
+
 WordPress emails the site administrator each time an automatic update finishes. Across a portfolio of managed sites that becomes a stream of messages with nothing to act on, which trains you to ignore the folder where the important update emails also land. This plugin removes the routine confirmations and leaves the alarms alone. It needs no configuration: a fresh install behaves like version 2.1 of the old plugin, with one deliberate change (see the [changelog](#changelog)).
 
 ---
@@ -45,16 +47,33 @@ Tested up to WordPress 7.1.
 
 ## Installation
 
-### As a normal plugin
+### From WordPress.org (recommended)
+
+1. In WordPress, go to **Plugins → Add Plugin** (called **Add New** on older versions) and search for "Quiet Update Emails".
+2. Click **Install Now**, then **Activate**. On multisite, network-activate it.
+
+Or with WP-CLI (on multisite use `--activate-network` in place of `--activate`):
+
+```bash
+wp plugin install quiet-update-emails --activate
+```
+
+Updates arrive through the normal WordPress update screen, or by themselves if you switch on auto-updates for the plugin. The plugin's page is [wordpress.org/plugins/quiet-update-emails](https://wordpress.org/plugins/quiet-update-emails/).
+
+### From the ZIP
+
+The ZIP in this folder is the same release as the one on WordPress.org. Use it where a site cannot reach WordPress.org, or to install a build before it is published.
 
 1. Download [`quiet-update-emails.zip`](quiet-update-emails.zip) from this folder.
-2. In WordPress, go to **Plugins → Add New → Upload Plugin**, choose the ZIP, click **Install Now**, then **Activate**. On multisite, network-activate it.
+2. In WordPress, go to **Plugins → Add Plugin → Upload Plugin**, choose the ZIP, click **Install Now**, then **Activate**. On multisite, network-activate it.
 
 Or with WP-CLI:
 
 ```bash
 wp plugin install /path/to/quiet-update-emails.zip --activate
 ```
+
+A copy installed from the ZIP is recognised by WordPress.org, so it is offered later versions through the normal update screen like any other plugin.
 
 ### As a must-use plugin
 

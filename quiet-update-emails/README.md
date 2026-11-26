@@ -292,6 +292,7 @@ Everything global is prefixed `proadvanced_update_emails_` / `PROADVANCED_UPDATE
 - Fixed: when two updates were logged at the same moment, one of the two log entries could be lost. Log writes now take a short lock and re-read the log from the database first. Tested with twelve processes writing at once, on a single site and across three sites of a multisite network, with no entries lost. Emails were never affected.
 - The update log's 500-entry limit is now stated on the WordPress.org page as well as here.
 - Uninstalling also removes a leftover lock, if there is one.
+- Thanks to PeepSo for raising the question that led to this fix.
 
 ### 3.0.0
 

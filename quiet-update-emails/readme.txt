@@ -131,6 +131,7 @@ Both options (settings and log) and the daily clean-up event.
 = 3.0.1 =
 * Fixed: when two updates were logged at the same moment, one of the two log entries could be lost. Log writes now take a short lock and re-read the log first. Emails were never affected.
 * Documentation: the update log's limit of 500 entries is now stated on this page.
+* Thanks to PeepSo for raising the question that led to this fix.
 
 = 3.0.0 =
 * New name. Successor to "Disable Auto-Update Success Emails" 2.1.
